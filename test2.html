@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/027c90a952.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <script src="products.js"></script>
+    <title>Petstore App</title>
+</head>
+
+
+<body>
+
+
+
+
+
+
+    <div id="app">
+
+
+        <header>
+            <nav>
+                <div class="nav">
+                    <ul>
+                        <h2 v-text="sitename"></h2>
+                    </ul>
+                    <button class="navbutton" v-on:click="showCheckout" :disabled="isCartEmpty"
+                       > {{ itemsInTheCart }}
+                        <span class="fa-solid fa-cart-shopping fa-2xs"> </span> Checkout
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+
+
+
+
+        <main>
+            <div class="lb">
+                <div v-if="showProduct">
+
+
+
+                    <div class="sortd">
+
+                        <div class="searchw">
+                            <input type="text" class="search" placeholder="Search....">
+                            <button class="searchb"> search</button>
+                        </div>
+
+                        <label for="sort">Filters:</label>
+                        <select v-model="selectedSort" class="sort">
+                            <option value="titleAsc">Title (A-Z)</option>
+                            <option value="titleDesc">Title (Z-A)</option>
+                            <option value="priceAsc">Price (Lowest-Highest)</option>
+                            <option value="priceDesc">Price (Highest-Lowest)</option>
+                            <option value="availabilityAsc">Availability (Lowest-Highest)</option>
+                            <option value="availabilityDesc">Availability (Highest-Lowest)</option>
+                            <option value="locationAsc">Location (Closest-Farthest)</option>
+                            <option value="locationDesc">Location (Farthest-Closest)</option>
+                        </select>
+                    </div>
+
+                    <div class="lessons">
+                        <div v-for="product in sortedProducts" :key="product.id">
+                            <figure>
+                                <img v-bind:src="product.image" alt="image">
+                            </figure>
+
+                            <h1 v-text="product.title"></h1> <br>
+                            <p v-text="product.description"></p> <br>
+                            <p>Price: {{product.price}}</p> <br>
+                            <p>Location: {{product.location}}</p> <br>
+                            <p>Spaces left: {{itemsLeft(product)}}</p> <br>
+
+                            <div>
+                                <span v-for="n in product.rating">★</span>
+                                <span v-for="n in 5 - product.rating">☆</span>
+                            </div> <br>
+
+                            <button class="hb" v-if="canAddToTheCart(product)"
+                                v-on:click="addItemToTheCart(product)">Add To The
+                                Cart</button>
+                            <button class="hbd" v-else disabled>Add To The Cart</button>
+
+                            <span v-if="itemsLeft(product) === 0"> All Out!</span>
+                            <span v-else-if="itemsLeft(product) < 5"> Only {{itemsLeft(product)}} left!</span>
+                            <span v-else> Buy now!</span>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="Checkout" class="checkout" v-else>
+
+                    <h1>Welcome to the Checkout page</h1>
+
+                    <div v-for="product in cart" :key="product" class="checkoutproducts">
+                        <div class="checkoutimg"> <img v-bind:src="getProductById(product).image" alt="image"></img>
+                        </div>
+                        <p>{{ getProductById(product).title }}</p> <br>
+                        <p>Price: {{ getProductById(product).price }}</p> <br>
+                        <button class="checkoutbutton" v-on:click="removeItemFromCart(product)"> Remove </button>
+                    </div>
+
+                    <div class="form">
+                        <form @submit.prevent="submitCheckOutForm">
+                            <p class="f-text"> <br>
+                                <strong> Name:</strong>
+                                <input type="text" v-model="order.name" class="form-input" pattern="[A-Z-z\s]+"
+                                    title="Name must contain only letters and spaces.">
+                            </p> <br>
+                            <p class="f-text">
+                                <strong> Phone number: </strong> <input type="number" v-model="order.phone"
+                                    class="form-input" maxlength="11" title="Phone number must be 11 digits.">
+                            </p> <br>
+
+
+                            <h2 class="f-text"> Order Information </h2> <br>
+
+
+                            <p class="f-text"> <strong> Name: </strong> {{order.name}} </p> <br>
+                            <p class="f-text">
+                                <strong> Phone: </strong> {{order.phone}}
+                            </p> <br>
+
+                            <button :disabled="!validateForm()" v-on:click="submitCheckOutForm"
+                                :class="{ active: validateForm() }" class="hbc">
+                                Place Order
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+
+
+
+        <script>
+            let webstore = new Vue({
+                el: "#app",
+                data: {
+                    sitename: "Online lessons",
+                    showProduct: true,
+                    products: products,
+                    cart: [],
+                    selectedSort: "titleAsc",
+
+                    order: {
+                        name: "",
+                        Phone: "",
+                    }
+                },
+
+                methods: {
+
+                    
+                    showCheckout() {
+                        if (!this.isCartEmpty) {
+                            this.showProduct = !this.showProduct;
+                        } else {
+                            alert("Your cart is empty. Please add products to proceed.");
+                        }
+                    },
+
+                    addItemToTheCart: function (product) {
+                        this.cart.push(product.id);
+                    },
+
+                    removeItemFromCart(id) {
+                        const index = this.cart.indexOf(id);
+                        if (index > -1) {
+                            this.cart.splice(index, 1);
+                        }
+                    },
+                
+
+                    validateForm: function () {
+                        const phoneRegex = /^\d{11}$/; // Matches exactly 11 digits
+                        const nameRegex = /^[A-Za-z\s]+$/; // Matches exactly 11 digits
+                        return (
+                            nameRegex.test(this.order.name) && // Ensure name is not empty
+                            phoneRegex.test(this.order.phone)
+                        );
+                    },
+
+
+
+                    submitCheckOutForm() {
+                        if (this.validateForm()) {
+                            alert("Congratulations, order submitted!");
+                            // Reset form and cart // 
+                            this.order.name = "";
+                            this.order.phone = "";
+                            this.cart = [];
+                        }
+                        else {
+                            alert("Please ensure all fields are filled correctly.");
+                        }
+                    },
+
+
+                    canAddToTheCart(product) {
+                        return product.availableInventory > this.cartCount(product.id);
+                    },
+
+                    cartCount(id) {
+                        return this.cart.filter(cartId => cartId === id).length;
+                    },
+
+                    getProductById: function (id) {
+                        return this.products.find(product => product.id === id);
+                    },
+
+                    itemsLeft(product) {
+                        return product.availableInventory - this.cartCount(product.id);
+                    }
+                },
+
+
+
+
+                computed: {
+                    itemsInTheCart: function () {
+                        return this.cart.length || "";
+                    },
+
+                    isCartEmpty() {
+                        return this.cart.length === 0;
+
+                    },
+
+
+
+                    sortedProducts() {
+                        let sorted = [...this.products];
+
+                        switch (this.selectedSort) {
+                            case "titleAsc":
+                                return sorted.sort((a, b) => a.title.localeCompare(b.title));
+                            case "titleDesc":
+                                return sorted.sort((a, b) => b.title.localeCompare(a.title));
+                            case "priceAsc":
+                                return sorted.sort((a, b) => a.price - b.price);
+                            case "priceDesc":
+                                return sorted.sort((a, b) => b.price - a.price);
+                            case "availabilityAsc":
+                                return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
+                            case "availabilityDesc":
+                                return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
+                            case "locationAsc":
+                                return sorted.sort(
+                                    (a, b) => a.location.localeCompare(b.location));
+                            case "locationDesc":
+                                return sorted.sort(
+                                    (a, b) => b.location.localeCompare(a.location));
+                            default:
+                                return this.products;
+                        }
+                    }
+
+                },
+                watch: {
+                        cart(newCart) {
+                            if (newCart.length === 0) {
+                                this.showProduct = true; // Automatically go back to the products page
+                            }
+                        }
+                    },
+                    
+            });
+
+    
+
+        </script>
+</body>
+
+
+</html>
