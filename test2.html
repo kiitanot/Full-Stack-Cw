@@ -10,20 +10,14 @@
 
     <link rel="stylesheet" href="style.css">
     <script src="https://kit.fontawesome.com/027c90a952.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
-    <script src="products.js"></script>
-    <title>Petstore App</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- <script src="products.js"></script> -->
+    <title>Lessons</title>
 </head>
 
 
-<body>
-
-
-
-
-
-
-    <div id="app">
+<body id="app">
+    <div>
 
 
         <header>
@@ -32,8 +26,7 @@
                     <ul>
                         <h2 v-text="sitename"></h2>
                     </ul>
-                    <button class="navbutton" v-on:click="showCheckout" :disabled="isCartEmpty"
-                       > {{ itemsInTheCart }}
+                    <button class="navbutton" v-on:click="showCheckout" :disabled="isCartEmpty"> {{ itemsInTheCart }}
                         <span class="fa-solid fa-cart-shopping fa-2xs"> </span> Checkout
                     </button>
                 </div>
@@ -118,7 +111,7 @@
                         <form @submit.prevent="submitCheckOutForm">
                             <p class="f-text"> <br>
                                 <strong> Name:</strong>
-                                <input type="text" v-model="order.name" class="form-input" pattern="[A-Z-z\s]+"
+                                <input type="text" v-model="order.name" class="form-input" pattern="[A-Za-z\s]+"
                                     title="Name must contain only letters and spaces.">
                             </p> <br>
                             <p class="f-text">
@@ -126,167 +119,26 @@
                                     class="form-input" maxlength="11" title="Phone number must be 11 digits.">
                             </p> <br>
 
-
                             <h2 class="f-text"> Order Information </h2> <br>
-
 
                             <p class="f-text"> <strong> Name: </strong> {{order.name}} </p> <br>
                             <p class="f-text">
                                 <strong> Phone: </strong> {{order.phone}}
                             </p> <br>
 
-                            <button :disabled="!validateForm()" v-on:click="submitCheckOutForm"
-                                :class="{ active: validateForm() }" class="hbc">
+                            <button type="submit" :disabled="!validateForm()" :class="{ active: validateForm() }"
+                                class="hbc">
                                 Place Order
                             </button>
                         </form>
+
                     </div>
 
                 </div>
             </div>
         </main>
 
-
-
-
-        <script>
-            let webstore = new Vue({
-                el: "#app",
-                data: {
-                    sitename: "Online lessons",
-                    showProduct: true,
-                    products: products,
-                    cart: [],
-                    selectedSort: "titleAsc",
-
-                    order: {
-                        name: "",
-                        Phone: "",
-                    }
-                },
-
-                methods: {
-
-                    
-                    showCheckout() {
-                        if (!this.isCartEmpty) {
-                            this.showProduct = !this.showProduct;
-                        } else {
-                            alert("Your cart is empty. Please add products to proceed.");
-                        }
-                    },
-
-                    addItemToTheCart: function (product) {
-                        this.cart.push(product.id);
-                    },
-
-                    removeItemFromCart(id) {
-                        const index = this.cart.indexOf(id);
-                        if (index > -1) {
-                            this.cart.splice(index, 1);
-                        }
-                    },
-                
-
-                    validateForm: function () {
-                        const phoneRegex = /^\d{11}$/; // Matches exactly 11 digits
-                        const nameRegex = /^[A-Za-z\s]+$/; // Matches exactly 11 digits
-                        return (
-                            nameRegex.test(this.order.name) && // Ensure name is not empty
-                            phoneRegex.test(this.order.phone)
-                        );
-                    },
-
-
-
-                    submitCheckOutForm() {
-                        if (this.validateForm()) {
-                            alert("Congratulations, order submitted!");
-                            // Reset form and cart // 
-                            this.order.name = "";
-                            this.order.phone = "";
-                            this.cart = [];
-                        }
-                        else {
-                            alert("Please ensure all fields are filled correctly.");
-                        }
-                    },
-
-
-                    canAddToTheCart(product) {
-                        return product.availableInventory > this.cartCount(product.id);
-                    },
-
-                    cartCount(id) {
-                        return this.cart.filter(cartId => cartId === id).length;
-                    },
-
-                    getProductById: function (id) {
-                        return this.products.find(product => product.id === id);
-                    },
-
-                    itemsLeft(product) {
-                        return product.availableInventory - this.cartCount(product.id);
-                    }
-                },
-
-
-
-
-                computed: {
-                    itemsInTheCart: function () {
-                        return this.cart.length || "";
-                    },
-
-                    isCartEmpty() {
-                        return this.cart.length === 0;
-
-                    },
-
-
-
-                    sortedProducts() {
-                        let sorted = [...this.products];
-
-                        switch (this.selectedSort) {
-                            case "titleAsc":
-                                return sorted.sort((a, b) => a.title.localeCompare(b.title));
-                            case "titleDesc":
-                                return sorted.sort((a, b) => b.title.localeCompare(a.title));
-                            case "priceAsc":
-                                return sorted.sort((a, b) => a.price - b.price);
-                            case "priceDesc":
-                                return sorted.sort((a, b) => b.price - a.price);
-                            case "availabilityAsc":
-                                return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
-                            case "availabilityDesc":
-                                return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
-                            case "locationAsc":
-                                return sorted.sort(
-                                    (a, b) => a.location.localeCompare(b.location));
-                            case "locationDesc":
-                                return sorted.sort(
-                                    (a, b) => b.location.localeCompare(a.location));
-                            default:
-                                return this.products;
-                        }
-                    }
-
-                },
-                watch: {
-                        cart(newCart) {
-                            if (newCart.length === 0) {
-                                this.showProduct = true; // Automatically go back to the products page
-                            }
-                        }
-                    },
-                    
-            });
-
-    
-
-        </script>
+        <script src="app.js"></script>
 </body>
-
 
 </html>
