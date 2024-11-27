@@ -17,7 +17,7 @@ Vue.createApp({
     methods: {
         // Fetch products from the backend
         fetchProducts() {
-            fetch('https://full-stack-back-end-ws6p.onrender.com/products') // Replace with your backend endpoint
+            fetch('https://full-stack-back-end-ws6p.onrender.com/products')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,9 +38,12 @@ Vue.createApp({
             if (this.validateForm()) {
                 // Prepare the order data
                 const orderData = {
-                    customerName: this.order.name, // Matches your backend's 'customerName' field
+                    customerName: this.order.name,
                     productIds: this.cart, // Assuming 'cart' contains product IDs
                 };
+                
+
+                
 
                 // Fetch call to submit the order
                 fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
@@ -83,6 +86,17 @@ Vue.createApp({
             }
         },
 
+        increaseQuantity(item) {
+            item.quantity++; // Increase the quantity in the cart
+        },
+        
+        decreaseQuantity(item) {
+            if (item.quantity > 1) {
+                item.quantity--; // Decrease the quantity in the cart
+            }
+        },
+        
+
         addItemToTheCart(product) {
             this.cart.push(product.id);
         },
@@ -92,13 +106,25 @@ Vue.createApp({
             if (index > -1) {
                 this.cart.splice(index, 1);
             }
+        
+            // If the cart becomes empty, show the product page
+            if (this.cart.length === 0) {
+                this.showProduct = true;
+            }
         },
+        
 
         validateForm() {
-            const phoneRegex = /^\d{11}$/;
-            const nameRegex = /[A-Za-z\s]+/;
+        
+            const phoneRegex = /^[0-9]{11}$/; 
+            
+            
+            const nameRegex = /^[A-Za-z\s]+$/;
+            
             return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
         },
+        
+        
 
         canAddToTheCart(product) {
             return product.availableInventory > this.cartCount(product.id);
@@ -153,11 +179,13 @@ Vue.createApp({
 
     watch: {
         cart(newCart) {
+            //shows product page when cart is empty
             if (newCart.length === 0) {
                 this.showProduct = true;
             }
         },
     },
+    
 
     mounted() {
         this.fetchProducts(); // Automatically fetch products on load

@@ -109,14 +109,15 @@
 
                     <div class="form">
                         <form @submit.prevent="submitCheckOutForm">
-                            <p class="f-text"> <br>
+                            <p class="f-text">
                                 <strong> Name:</strong>
-                                <input type="text" v-model="order.name" class="form-input" pattern="[A-Za-z\s]+"
-                                    title="Name must contain only letters and spaces.">
+                                <input type="text" v-model="order.name" class="form-input" pattern="^[A-Za-z]+$"
+                                    title="Name must contain only letters A-Za-z."  required>
                             </p> <br>
                             <p class="f-text">
-                                <strong> Phone number: </strong> <input type="number" v-model="order.phone"
-                                    class="form-input" maxlength="11" title="Phone number must be 11 digits.">
+                                <strong> Phone number: </strong>
+                                <input type="text" v-model="order.phone" class="form-input" 
+                                    title="Phone number should be numeric (including leading zeros).">
                             </p> <br>
 
                             <h2 class="f-text"> Order Information </h2> <br>
@@ -126,8 +127,7 @@
                                 <strong> Phone: </strong> {{order.phone}}
                             </p> <br>
 
-                            <button type="submit" :disabled="!validateForm()" :class="{ active: validateForm() }"
-                                class="hbc">
+                            <button type="submit" :disabled="!validateForm()" :class="{ active: validateForm() }" class="hbc">
                                 Place Order
                             </button>
                         </form>
