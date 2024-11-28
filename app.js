@@ -8,6 +8,7 @@ Vue.createApp({
             cart: [],
             selectedSort: "titleAsc",
             searchProducts: "",
+            debounceTimer: null,
             order: {
                 name: "",
                 phone: "",
@@ -16,6 +17,28 @@ Vue.createApp({
     },
 
     methods: {
+        
+        debounceSearch() {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => {
+                this.searchProductsFromBackend(); // Call backend search
+            }, 300); // Adjust delay as needed (300ms is standard)
+        },
+        searchProductsFromBackend() {
+            const searchTerm = this.searchProducts.trim().toLowerCase();
+            fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${searchTerm}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.products = data; // Update displayed products
+                })
+                .catch(error => {
+                    console.error("Search error:", error);
+                    alert("Error searching for products. Please try again later.");
+                });
+        },
+        
+   
+
         // Fetch products from the backend
         fetchProducts() {
             fetch('https://full-stack-back-end-ws6p.onrender.com/products')
@@ -34,23 +57,8 @@ Vue.createApp({
                 });
         },
 
-        searchProductsFromBackend() {
-            const searchTerm = this.searchProducts.trim().toLowerCase();
-            
-            if (searchTerm) {
-                fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${searchTerm}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        this.products = data; // Update products with search results
-                    })
-                    .catch(error => {
-                        console.error("Search error:", error);
-                        alert("Error searching for products. Please try again later.");
-                    });
-            } else {
-                this.fetchProducts(); // If no search term, fetch all products
-            }
-        },
+       
+    
 
         // Submit checkout order to the backend
         submitCheckOutForm() {
