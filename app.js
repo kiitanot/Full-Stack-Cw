@@ -85,16 +85,6 @@ Vue.createApp({
                 alert("Your cart is empty. Please add products to proceed.");
             }
         },
-
-        increaseQuantity(item) {
-            item.quantity++; // Increase the quantity in the cart
-        },
-        
-        decreaseQuantity(item) {
-            if (item.quantity > 1) {
-                item.quantity--; // Decrease the quantity in the cart
-            }
-        },
         
 
         addItemToTheCart(product) {
