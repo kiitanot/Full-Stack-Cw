@@ -43,9 +43,9 @@ Vue.createApp({
                     phoneNumber: this.order.phone,
                     productIds: this.cart, // Assuming 'cart' contains product IDs
                 };
-
-
-
+                
+            
+                
 
                 // Fetch call to submit the order
                 fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
@@ -65,6 +65,25 @@ Vue.createApp({
                     })
                     .then(data => {
                         alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+        
+                        // Update the inventory
+                        this.cart.forEach(productId => {
+                            const product = this.getProductById(productId);
+                            if (product) {
+                                product.availableInventory -= 1; // Decrease inventory
+                                // Send a PUT request to update the backend
+                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
+                                    method: "PUT",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                }).catch(error => {
+                                    console.error(`Failed to update inventory for product ID ${productId}:`, error);
+                                });
+                            }
+                        });
+        
                         // Reset the form fields and cart
                         this.order.name = "";
                         this.order.phone = "";
@@ -80,8 +99,8 @@ Vue.createApp({
         },
 
 
+    
 
-        // Other methods remain unchanged
         showCheckout() {
             if (!this.isCartEmpty) {
                 this.showProduct = !this.showProduct;
@@ -90,7 +109,12 @@ Vue.createApp({
             }
         },
 
-
+        handleSearch() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.searchProducts = this.searchProducts.trim();
+            }, 300); // Adjust debounce timing as needed
+        },
 
         addItemToTheCart(product) {
             this.cart.push(product.id);
@@ -147,42 +171,58 @@ Vue.createApp({
             return this.cart.length === 0;
         },
 
-        sortedProducts() {
-            let sorted = [...this.products];
-            switch (this.selectedSort) {
-                case "titleAsc":
-                    return sorted.sort((a, b) => a.title.localeCompare(b.title));
-                case "titleDesc":
-                    return sorted.sort((a, b) => b.title.localeCompare(a.title));
-                case "priceAsc":
-                    return sorted.sort((a, b) => a.price - b.price);
-                case "priceDesc":
-                    return sorted.sort((a, b) => b.price - a.price);
-                case "availabilityAsc":
-                    return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
-                case "availabilityDesc":
-                    return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
-                case "locationAsc":
-                    return sorted.sort((a, b) => a.location.localeCompare(b.location));
-                case "locationDesc":
-                    return sorted.sort((a, b) => b.location.localeCompare(a.location));
-                default:
-                    return this.products;
+        // Filtered products based on search input
+        filteredProducts() {
+            if (!this.searchProducts.trim()) {
+                return this.sortedProducts; // Use the sorted products if no search term
             }
+
+            const searchTerm = this.searchProducts.toLowerCase();
+            return this.sortedProducts.filter(product =>
+                product.title.toLowerCase().includes(searchTerm) ||
+                product.location.toLowerCase().includes(searchTerm) ||
+                product.price.toString().includes(searchTerm) ||
+                product.availableInventory.toString().includes(searchTerm)
+            );
         },
+
+
+    sortedProducts() {
+        let sorted = [...this.products];
+        switch (this.selectedSort) {
+            case "titleAsc":
+                return sorted.sort((a, b) => a.title.localeCompare(b.title));
+            case "titleDesc":
+                return sorted.sort((a, b) => b.title.localeCompare(a.title));
+            case "priceAsc":
+                return sorted.sort((a, b) => a.price - b.price);
+            case "priceDesc":
+                return sorted.sort((a, b) => b.price - a.price);
+            case "availabilityAsc":
+                return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
+            case "availabilityDesc":
+                return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
+            case "locationAsc":
+                return sorted.sort((a, b) => a.location.localeCompare(b.location));
+            case "locationDesc":
+                return sorted.sort((a, b) => b.location.localeCompare(a.location));
+            default:
+                return this.products;
+        }
     },
+},
 
     watch: {
-        cart(newCart) {
-            //shows product page when cart is empty
-            if (newCart.length === 0) {
-                this.showProduct = true;
-            }
-        },
+    cart(newCart) {
+        //shows product page when cart is empty
+        if (newCart.length === 0) {
+            this.showProduct = true;
+        }
     },
+},
 
 
     mounted() {
-        this.fetchProducts(); // Automatically fetch products on load
-    },
+    this.fetchProducts(); // Automatically fetch products on load
+},
 }).mount('#app');
