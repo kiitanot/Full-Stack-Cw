@@ -39,6 +39,7 @@ Vue.createApp({
                 // Prepare the order data
                 const orderData = {
                     customerName: this.order.name,
+                    phoneNumber : this.order.phone,
                     productIds: this.cart, // Assuming 'cart' contains product IDs
                 };
                 
