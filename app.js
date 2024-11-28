@@ -7,6 +7,7 @@ Vue.createApp({
             products: [], // Initially empty; fetched from the backend
             cart: [],
             selectedSort: "titleAsc",
+            searchProducts: "",
             order: {
                 name: "",
                 phone: "",
@@ -78,33 +79,7 @@ Vue.createApp({
             }
         },
 
-        //search
 
-        fetchProducts(query = '') {
-            const url = query
-                ? `https://full-stack-back-end-ws6p.onrender.com/search?query=${query}`
-                : 'https://full-stack-back-end-ws6p.onrender.com/products';
-
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    this.products = data;
-                })
-                .catch(error => {
-                    console.error("Failed to fetch products:", error);
-                    alert("Error fetching products. Please try again later.");
-                });
-        },
-
-        // Method to handle search input and update the products list
-        searchProducts() {
-            this.fetchProducts(this.searchQuery); // Fetch products based on the search query
-        },
 
         // Other methods remain unchanged
         showCheckout() {
