@@ -39,12 +39,12 @@ Vue.createApp({
                 // Prepare the order data
                 const orderData = {
                     customerName: this.order.name,
-                    phoneNumber : this.order.phone,
+                    phoneNumber: this.order.phone,
                     productIds: this.cart, // Assuming 'cart' contains product IDs
                 };
-                
 
-                
+
+
 
                 // Fetch call to submit the order
                 fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
@@ -78,6 +78,34 @@ Vue.createApp({
             }
         },
 
+        //search
+
+        fetchProducts(query = '') {
+            const url = query
+                ? `https://full-stack-back-end-ws6p.onrender.com/search?query=${query}`
+                : 'https://full-stack-back-end-ws6p.onrender.com/products';
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.products = data;
+                })
+                .catch(error => {
+                    console.error("Failed to fetch products:", error);
+                    alert("Error fetching products. Please try again later.");
+                });
+        },
+
+        // Method to handle search input and update the products list
+        searchProducts() {
+            this.fetchProducts(this.searchQuery); // Fetch products based on the search query
+        },
+
         // Other methods remain unchanged
         showCheckout() {
             if (!this.isCartEmpty) {
@@ -87,7 +115,7 @@ Vue.createApp({
             }
         },
 
-        
+
 
         addItemToTheCart(product) {
             this.cart.push(product.id);
@@ -98,25 +126,25 @@ Vue.createApp({
             if (index > -1) {
                 this.cart.splice(index, 1);
             }
-        
+
             // If the cart becomes empty, show the product page
             if (this.cart.length === 0) {
                 this.showProduct = true;
             }
         },
-        
+
 
         validateForm() {
-        
-            const phoneRegex = /^[0-9]{11}$/; 
-            
-            
+
+            const phoneRegex = /^[0-9]{11}$/;
+
+
             const nameRegex = /^[A-Za-z]+$/;
-            
+
             return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
         },
-        
-        
+
+
 
         canAddToTheCart(product) {
             return product.availableInventory > this.cartCount(product.id);
@@ -177,7 +205,7 @@ Vue.createApp({
             }
         },
     },
-    
+
 
     mounted() {
         this.fetchProducts(); // Automatically fetch products on load
