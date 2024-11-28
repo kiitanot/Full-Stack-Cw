@@ -85,6 +85,7 @@ Vue.createApp({
                 alert("Your cart is empty. Please add products to proceed.");
             }
         },
+
         
 
         addItemToTheCart(product) {
@@ -109,7 +110,7 @@ Vue.createApp({
             const phoneRegex = /^[0-9]{11}$/; 
             
             
-            const nameRegex = /^[A-Za-z\s]+$/;
+            const nameRegex = /^[A-Za-z]+$/;
             
             return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
         },
