@@ -111,7 +111,7 @@
                         <form @submit.prevent="submitCheckOutForm">
                             <p class="f-text">
                                 <strong> Name:</strong>
-                                <input type="text" v-model="order.name" class="form-input" pattern="/^[A-Za-z]+$"
+                                <input type="text" v-model="order.name" class="form-input" pattern="^[A-Za-z]+$"
                                     title="Name must contain only letters A-Za-z."  required>
                             </p> <br>
                             <p class="f-text">
