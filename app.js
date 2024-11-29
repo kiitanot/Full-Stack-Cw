@@ -82,15 +82,22 @@ Vue.createApp({
         // Submit checkout order to the backend
         submitCheckOutForm() {
             if (this.validateForm()) {
+                // Prepare the order data
                 const orderData = {
                     customerName: this.order.name,
                     phoneNumber: this.order.phone,
-                    productIds: this.cart,
+                    productIds: this.cart, // Assuming 'cart' contains product IDs
                 };
-        
+
+
+
+
+                // Fetch call to submit the order
                 fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                     body: JSON.stringify(orderData),
                 })
                 .then(response => {
@@ -103,23 +110,27 @@ Vue.createApp({
                 })
                 .then(data => {
                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
-                    
-                    // Batch inventory update
-                    const inventoryUpdates = this.cart.reduce((acc, productId) => {
-                        acc[productId] = (acc[productId] || 0) + 1; // Count occurrences
-                        return acc;
-                    }, {});
         
-                    // Send batch inventory update
-                    fetch('https://full-stack-back-end-ws6p.onrender.com/products/batch-update', {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(inventoryUpdates),
-                    }).catch(error => {
-                        console.error("Failed to update inventory:", error);
+                    // Update the inventory
+                    this.cart.forEach(productId => {
+                        const product = this.getProductById(productId);
+                        if (product) {
+                            product.availableInventory -= 1; // Decrease inventory
+        
+                            // Send a PUT request to update the backend
+                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                method: "PUT",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                            }).catch(error => {
+                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                            });
+                        }  
                     });
         
-                    // Reset fields and cart
+                    // Reset the form fields and cart
                     this.order.name = "";
                     this.order.phone = "";
                     this.cart = [];
@@ -132,7 +143,6 @@ Vue.createApp({
                 alert("Please ensure all fields are filled correctly.");
             }
         },
-        
 
 
 
