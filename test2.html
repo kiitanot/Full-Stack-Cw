@@ -267,7 +267,8 @@
                                                     "Content-Type": "application/json",
                                                 },
                                                 body: JSON.stringify({ availableInventory: product.availableInventory }), // Only send availableInventory
-                                            }).catch(error => {
+                                            })
+                                                .catch(error => {
                                                     console.error(`Failed to update inventory for product ID ${product._id}:`, error);
                                                 });
                                         }
