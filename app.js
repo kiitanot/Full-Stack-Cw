@@ -18,18 +18,37 @@ Vue.createApp({
 
     methods: {
         
+        // Debounced search to reduce the number of backend requests
         debounceSearch() {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = setTimeout(() => {
                 this.searchProductsFromBackend(); // Call backend search
             }, 300); // Adjust delay as needed (300ms is standard)
         },
+
+        // Fetch products based on search input from the backend
         searchProductsFromBackend() {
-            const searchTerm = this.searchProducts.trim().toLowerCase();
-            fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${searchTerm}`)
-                .then(response => response.json())
+            const searchTerm = this.searchProducts.trim();
+            
+            if (!searchTerm) {
+                this.fetchProducts(); // Reload all products if search is empty
+                return;
+            }
+
+            fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${encodeURIComponent(searchTerm)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    this.products = data; // Update displayed products
+                    if (Array.isArray(data) && data.length > 0) {
+                        this.products = data; // Update displayed products
+                    } else {
+                        console.warn("No products found for the search term:", searchTerm);
+                        this.products = []; // Clear displayed products if no match
+                    }
                 })
                 .catch(error => {
                     console.error("Search error:", error);
