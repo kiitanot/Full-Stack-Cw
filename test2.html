@@ -142,11 +142,12 @@
 
         <script>
             Vue.createApp({
+                // el: "#app",
                 data() {
                     return {
                         sitename: "Online lessons",
                         showProduct: true,
-                        products: [], // Fetched from backend
+                        products: [], // Initially empty; fetched from the backend
                         cart: [],
                         selectedSort: "titleAsc",
                         searchProducts: "",
@@ -155,18 +156,20 @@
                             name: "",
                             phone: "",
                         },
-                    };
+                    }
                 },
 
                 methods: {
-                    // **Search Methods**
+
+                    // Debounced search to reduce the number of backend requests
                     debounceSearch() {
                         clearTimeout(this.debounceTimer);
                         this.debounceTimer = setTimeout(() => {
-                            this.searchProductsFromBackend();
-                        }, 200);
+                            this.searchProductsFromBackend(); // Call backend search
+                        }, 300); // Adjust delay as needed (300ms is standard)
                     },
 
+                    // Fetch products based on search input from the backend
                     searchProductsFromBackend() {
                         const searchTerm = this.searchProducts.trim();
 
@@ -183,9 +186,11 @@
                                 return response.json();
                             })
                             .then(data => {
-                                this.products = Array.isArray(data) && data.length > 0 ? data : [];
-                                if (this.products.length === 0) {
-                                    console.warn("No products found for:", searchTerm);
+                                if (Array.isArray(data) && data.length > 0) {
+                                    this.products = data; // Update displayed products
+                                } else {
+                                    console.warn("No products found for the search term:", searchTerm);
+                                    this.products = []; // Clear displayed products if no match
                                 }
                             })
                             .catch(error => {
@@ -194,10 +199,11 @@
                             });
                     },
 
-                    // **Product Fetching**
+
+
+                    // Fetch products from the backend
                     fetchProducts() {
-                        console.log("Fetching products...");
-                        fetch("https://full-stack-back-end-ws6p.onrender.com/products")
+                        fetch('https://full-stack-back-end-ws6p.onrender.com/products')
                             .then(response => {
                                 if (!response.ok) {
                                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -206,7 +212,6 @@
                             })
                             .then(data => {
                                 this.products = data;
-                                console.log("Fetched products:", data);
                             })
                             .catch(error => {
                                 console.error("Failed to fetch products:", error);
@@ -214,38 +219,28 @@
                             });
                     },
 
-                    // **Cart Methods**
-                    addItemToTheCart(product) {
-                        if (this.canAddToTheCart(product)) {
-                            this.cart.push(product.id);
-                        } else {
-                            alert("Insufficient stock to add this item.");
-                        }
-                    },
 
-                    removeItemFromCart(id) {
-                        const index = this.cart.indexOf(id);
-                        if (index > -1) {
-                            this.cart.splice(index, 1);
-                        }
 
-                        if (this.cart.length === 0) {
-                            this.showProduct = true; // Show products when cart is empty
-                        }
-                    },
 
-                    // **Order Submission**
+                    // Submit checkout order to the backend
                     submitCheckOutForm() {
                         if (this.validateForm()) {
+                            // Prepare the order data
                             const orderData = {
                                 customerName: this.order.name,
                                 phoneNumber: this.order.phone,
-                                productIds: this.cart,
+                                productIds: this.cart, // Assuming 'cart' contains product IDs
                             };
 
-                            fetch("https://full-stack-back-end-ws6p.onrender.com/orders", {
+
+
+
+                            // Fetch call to submit the order
+                            fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json" },
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
                                 body: JSON.stringify(orderData),
                             })
                                 .then(response => {
@@ -257,9 +252,31 @@
                                     return response.json();
                                 })
                                 .then(data => {
-                                    alert(`Order submitted! Order ID: ${data.orderId}`);
-                                    this.updateInventoryAfterOrder();
-                                    this.resetOrderForm();
+                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+
+                                    // Update the inventory
+                                    this.cart.forEach(productId => {
+                                        const product = this.getProductById(productId);
+                                        if (product) {
+                                            product.availableInventory -= 1; // Decrease inventory
+
+                                            // Send a PUT request to update the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                },
+                                                body: JSON.stringify({ availableInventory: product.availableInventory }), // Only send availableInventory
+                                            }).catch(error => {
+                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                                });
+                                        }
+                                    });
+
+                                    // Reset the form fields and cart
+                                    this.order.name = "";
+                                    this.order.phone = "";
+                                    this.cart = [];
                                 })
                                 .catch(error => {
                                     console.error("Failed to submit order:", error.message);
@@ -270,37 +287,48 @@
                         }
                     },
 
-                    // Updates inventory after order submission
-                    updateInventoryAfterOrder() {
-                        this.cart.forEach(productId => {
-                            const product = this.getProductById(productId);
-                            if (product) {
-                                product.availableInventory -= 1;
 
-                                // Update backend inventory
-                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product.id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                }).catch(error => {
-                                    console.error(`Failed to update inventory for product ID ${product.id}:`, error);
-                                });
-                            }
-                        });
+
+
+                    // Other methods remain unchanged
+                    showCheckout() {
+                        if (!this.isCartEmpty) {
+                            this.showProduct = !this.showProduct;
+                        } else {
+                            alert("Your cart is empty. Please add products to proceed.");
+                        }
                     },
 
-                    resetOrderForm() {
-                        this.order.name = "";
-                        this.order.phone = "";
-                        this.cart = [];
+
+
+                    addItemToTheCart(product) {
+                        this.cart.push(product.id);
                     },
 
-                    // **Utility Methods**
+                    removeItemFromCart(id) {
+                        const index = this.cart.indexOf(id);
+                        if (index > -1) {
+                            this.cart.splice(index, 1);
+                        }
+
+                        // If the cart becomes empty, show the product page
+                        if (this.cart.length === 0) {
+                            this.showProduct = true;
+                        }
+                    },
+
+
                     validateForm() {
+
                         const phoneRegex = /^[0-9]{11}$/;
-                        const nameRegex = /^[A-Za-z\s'-]+$/;
+
+
+                        const nameRegex = /^[A-Za-z]+$/;
+
                         return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
                     },
+
+
 
                     canAddToTheCart(product) {
                         return product.availableInventory > this.cartCount(product.id);
@@ -317,14 +345,6 @@
                     itemsLeft(product) {
                         return product.availableInventory - this.cartCount(product.id);
                     },
-
-                    showCheckout() {
-                        if (!this.isCartEmpty) {
-                            this.showProduct = false;
-                        } else {
-                            alert("Your cart is empty. Please add products to proceed.");
-                        }
-                    },
                 },
 
                 computed: {
@@ -337,34 +357,44 @@
                     },
 
                     sortedProducts() {
-                        const sorted = [...this.products];
-                        const sortBy = {
-                            titleAsc: (a, b) => a.title.localeCompare(b.title),
-                            titleDesc: (a, b) => b.title.localeCompare(a.title),
-                            priceAsc: (a, b) => a.price - b.price,
-                            priceDesc: (a, b) => b.price - a.price,
-                            availabilityAsc: (a, b) => a.availableInventory - b.availableInventory,
-                            availabilityDesc: (a, b) => b.availableInventory - a.availableInventory,
-                            locationAsc: (a, b) => a.location.localeCompare(b.location),
-                            locationDesc: (a, b) => b.location.localeCompare(a.location),
-                        };
-                        return sortBy[this.selectedSort] ? sorted.sort(sortBy[this.selectedSort]) : this.products;
+                        let sorted = [...this.products];
+                        switch (this.selectedSort) {
+                            case "titleAsc":
+                                return sorted.sort((a, b) => a.title.localeCompare(b.title));
+                            case "titleDesc":
+                                return sorted.sort((a, b) => b.title.localeCompare(a.title));
+                            case "priceAsc":
+                                return sorted.sort((a, b) => a.price - b.price);
+                            case "priceDesc":
+                                return sorted.sort((a, b) => b.price - a.price);
+                            case "availabilityAsc":
+                                return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
+                            case "availabilityDesc":
+                                return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
+                            case "locationAsc":
+                                return sorted.sort((a, b) => a.location.localeCompare(b.location));
+                            case "locationDesc":
+                                return sorted.sort((a, b) => b.location.localeCompare(a.location));
+                            default:
+                                return this.products;
+                        }
                     },
                 },
 
                 watch: {
                     cart(newCart) {
+                        //shows product page when cart is empty
                         if (newCart.length === 0) {
                             this.showProduct = true;
                         }
                     },
                 },
 
-                mounted() {
-                    this.fetchProducts();
-                },
-            }).mount("#app");
 
+                mounted() {
+                    this.fetchProducts(); // Automatically fetch products on load
+                },
+            }).mount('#app');
         </script>
 </body>
 
