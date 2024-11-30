@@ -224,7 +224,6 @@
                                 productIds: this.cart, // Assuming 'cart' contains product IDs
                             };
 
-                            // Fetch call to submit the order
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -256,21 +255,9 @@
                                                     "Content-Type": "application/json",
                                                 },
                                                 body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            })
-                                                .then(response => {
-                                                    if (!response.ok) {
-                                                        return response.json().then(errorData => {
-                                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                                                        });
-                                                    }
-                                                    return response.json();
-                                                })
-                                                .then(() => {
-                                                    console.log(`Successfully updated inventory for product ID: ${product._id}`);
-                                                })
-                                                .catch(error => {
-                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
-                                                });
+                                            }).catch(error => {
+                                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                            });
                                         }
                                     });
 
