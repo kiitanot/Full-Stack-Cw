@@ -254,10 +254,13 @@
                                                 headers: {
                                                     "Content-Type": "application/json",
                                                 },
-                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                                body: JSON.stringify({
+                                                    quantityOrdered: product.quantityOrdered  // Send the quantityOrdered to update the stock
+                                                }),
                                             }).catch(error => {
                                                 console.error(`Failed to update inventory for product ID ${product._id}:`, error);
                                             });
+
                                         }
                                     });
 
