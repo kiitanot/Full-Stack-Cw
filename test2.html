@@ -225,69 +225,41 @@
                             };
 
 
+                            // Submit order
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
+                                headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify(orderData),
                             })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        return response.json().then(errorData => {
-                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                                        });
-                                    }
-                                    return response.json();
-                                })
+                                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
                                 .then(data => {
-                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+                                    alert(`Order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory
-                                    this.cart.forEach(productId => {
-                                        const product = this.getProductById(productId);
-                                        if (product) {
-                                            const quantityOrdered = 1; // Adjust based on actual logic for order quantity
-                                            const updatePayload = {
-                                                quantityOrdered: quantityOrdered,
-                                            };
-
-                                            // Send a PUT request to update the backend
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
-                                                method: "PUT",
-                                                headers: {
-                                                    "Content-Type": "application/json",
-                                                },
-                                                body: JSON.stringify(updatePayload), // Send only the necessary fields
-                                            })
-                                                .then(response => {
-                                                    if (!response.ok) {
-                                                        return response.json().then(errorData => {
-                                                            throw new Error(
-                                                                errorData.error || `Failed to update inventory for product ID ${productId}`
-                                                            );
-                                                        });
-                                                    }
-                                                    return response.json();
-                                                })
-                                                .then(data => {
-                                                    console.log(`Inventory updated for product ID ${productId}:`, data);
-                                                })
-                                                .catch(error => {
-                                                    console.error(`Failed to update inventory for product ID ${productId}:`, error.message);
-                                                });
-                                        }
+                                    // Update inventory for all products in the cart
+                                    const updates = this.cart.map(productId => {
+                                        return fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
+                                            method: "PUT",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ quantityOrdered: 1 }), // Assume 1 item per product for simplicity
+                                        })
+                                            .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
                                     });
 
-                                    // Reset the form fields and cart
+                                    // Wait for all updates to complete
+                                    return Promise.all(updates);
+                                })
+                                .then(() => {
+                                    // Reset form and cart
                                     this.order.name = "";
                                     this.order.phone = "";
                                     this.cart = [];
+                                    alert("Order and inventory successfully processed!");
                                 })
                                 .catch(error => {
-                                    console.error("Failed to submit order:", error.message);
-                                    alert("Error submitting order: " + error.message);
+                                    console.error("Error:", error.message);
+                                    alert("An error occurred: " + error.message);
                                 });
+
 
                         } else {
                             alert("Please ensure all fields are filled correctly.");
