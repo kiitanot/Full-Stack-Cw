@@ -157,7 +157,7 @@
                         },
                     }
                 },
-        
+
                 methods: {
                     // Debounced search to reduce the number of backend requests
                     debounceSearch() {
@@ -166,16 +166,16 @@
                             this.searchProductsFromBackend(); // Call backend search
                         }, 300); // Adjust delay as needed (300ms is standard)
                     },
-        
+
                     // Fetch products based on search input from the backend
                     searchProductsFromBackend() {
                         const searchTerm = this.searchProducts.trim();
-        
+
                         if (!searchTerm) {
                             this.fetchProducts(); // Reload all products if search is empty
                             return;
                         }
-        
+
                         fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${encodeURIComponent(searchTerm)}`)
                             .then(response => {
                                 if (!response.ok) {
@@ -196,7 +196,7 @@
                                 alert("Error searching for products. Please try again later.");
                             });
                     },
-        
+
                     // Fetch products from the backend
                     fetchProducts() {
                         fetch('https://full-stack-back-end-ws6p.onrender.com/products')
@@ -214,73 +214,82 @@
                                 alert("Error fetching products. Please try again later.");
                             });
                     },
-        
-                    // Submit checkout order to the backend
+
                     submitCheckOutForm() {
-            if (this.validateForm()) {
-                // Prepare the order data
-                const orderData = {
-                    customerName: this.order.name,
-                    phoneNumber: this.order.phone,
-                    productIds: this.cart, // Assuming 'cart' contains product IDs
-                };
+                        if (this.validateForm()) {
+                            // Prepare the order data
+                            const orderData = {
+                                customerName: this.order.name,
+                                phoneNumber: this.order.phone,
+                                productIds: this.cart, // Assuming 'cart' contains product IDs
+                            };
 
-
-
-
-                // Fetch call to submit the order
-                fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(orderData),
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(errorData => {
-                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
-        
-                    // Update the inventory
-                    this.cart.forEach(productId => {
-                        const product = this.getProductById(productId);
-                        if (product) {
-                            product.availableInventory -= 1; // Decrease inventory
-        
-                            // Send a PUT request to update the backend
-                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
-                                method: "PUT",
+                            // Fetch call to submit the order
+                            fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
+                                method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
                                 },
-                                body: JSON.stringify({ availableInventory: product.availableInventory }),
-                            }).catch(error => {
-                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
-                            });
-                        }  
-                    });
-        
-                    // Reset the form fields and cart
-                    this.order.name = "";
-                    this.order.phone = "";
-                    this.cart = [];
-                })
-                .catch(error => {
-                    console.error("Failed to submit order:", error.message);
-                    alert("Error submitting order: " + error.message);
-                });
-            } else {
-                alert("Please ensure all fields are filled correctly.");
-            }
-        },
-        
-        
+                                body: JSON.stringify(orderData),
+                            })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        return response.json().then(errorData => {
+                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                                        });
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+
+                                    // Update the inventory
+                                    this.cart.forEach(productId => {
+                                        const product = this.getProductById(productId);
+                                        if (product) {
+                                            product.availableInventory -= 1; // Decrease inventory
+
+                                            // Send a PUT request to update the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                },
+                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                            })
+                                                .then(response => {
+                                                    if (!response.ok) {
+                                                        return response.json().then(errorData => {
+                                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                                                        });
+                                                    }
+                                                    return response.json();
+                                                })
+                                                .then(() => {
+                                                    console.log(`Successfully updated inventory for product ID: ${product._id}`);
+                                                })
+                                                .catch(error => {
+                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                                });
+                                        }
+                                    });
+
+                                    // Reset the form fields and cart
+                                    this.order.name = "";
+                                    this.order.phone = "";
+                                    this.cart = [];
+                                })
+                                .catch(error => {
+                                    console.error("Failed to submit order:", error.message);
+                                    alert("Error submitting order: " + error.message);
+                                });
+                        } else {
+                            alert("Please ensure all fields are filled correctly.");
+                        }
+                    },
+
+
+
                     // Other methods remain unchanged
                     showCheckout() {
                         if (!this.isCartEmpty) {
@@ -289,55 +298,55 @@
                             alert("Your cart is empty. Please add products to proceed.");
                         }
                     },
-        
+
                     addItemToTheCart(product) {
                         this.cart.push(product.id);
                     },
-        
+
                     removeItemFromCart(id) {
                         const index = this.cart.indexOf(id);
                         if (index > -1) {
                             this.cart.splice(index, 1);
                         }
-        
+
                         // If the cart becomes empty, show the product page
                         if (this.cart.length === 0) {
                             this.showProduct = true;
                         }
                     },
-        
+
                     validateForm() {
                         const phoneRegex = /^[0-9]{11}$/;
                         const nameRegex = /^[A-Za-z]+$/;
                         return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
                     },
-        
+
                     canAddToTheCart(product) {
                         return product.availableInventory > this.cartCount(product.id);
                     },
-        
+
                     cartCount(id) {
                         return this.cart.filter(cartId => cartId === id).length;
                     },
-        
+
                     getProductById(id) {
                         return this.products.find(product => product.id === id);
                     },
-        
+
                     itemsLeft(product) {
                         return product.availableInventory - this.cartCount(product.id);
                     },
                 },
-        
+
                 computed: {
                     itemsInTheCart() {
                         return this.cart.length || "";
                     },
-        
+
                     isCartEmpty() {
                         return this.cart.length === 0;
                     },
-        
+
                     sortedProducts() {
                         let sorted = [...this.products];
                         switch (this.selectedSort) {
@@ -362,7 +371,7 @@
                         }
                     },
                 },
-        
+
                 watch: {
                     cart(newCart) {
                         //shows product page when cart is empty
@@ -371,13 +380,13 @@
                         }
                     },
                 },
-        
+
                 mounted() {
                     this.fetchProducts(); // Automatically fetch products on load
                 },
             }).mount('#app');
         </script>
-        
+
 
 </body>
 
