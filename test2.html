@@ -228,48 +228,49 @@
                             // Submit order
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json" },
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
                                 body: JSON.stringify(orderData),
                             })
                                 .then(response => {
                                     if (!response.ok) {
-                                        return response.json().then(err => Promise.reject(err));
+                                        return response.json().then(errorData => {
+                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                                        });
                                     }
                                     return response.json();
                                 })
-                                .then(orderData => {
-                                    alert(`Order submitted! Order ID: ${orderData.orderId}`);
+                                .then(data => {
+                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update inventory for all items in the cart
-                                    const updatePromises = this.cart.map(productId => {
-                                        return fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
-                                            method: "PUT",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ quantityOrdered: 1 }), // Adjust for actual logic
-                                        })
-                                            .then(response => {
-                                                if (!response.ok) {
-                                                    return response.json().then(err => Promise.reject(err));
-                                                }
-                                                return response.json();
+                                    // Update the inventory
+                                    this.cart.forEach(productId => {
+                                        const product = this.getProductById(productId);
+                                        if (product) {
+                                            product.availableInventory -= 1; // Decrease inventory
+                                            // Send a PUT request to update the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                },
+                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                            }).catch(error => {
+                                                console.error(`Failed to update inventory for product ID ${productId}:`, error);
                                             });
+                                        }
                                     });
 
-                                    return Promise.all(updatePromises);
-                                })
-                                .then(() => {
-                                    // Clear the cart and reset the form after successful updates
-                                    this.cart = [];
+                                    // Reset the form fields and cart
                                     this.order.name = "";
                                     this.order.phone = "";
-                                    alert("Order completed, and inventory updated successfully!");
+                                    this.cart = [];
                                 })
                                 .catch(error => {
-                                    console.error("Error:", error.message);
-                                    alert("An error occurred: " + error.message);
+                                    console.error("Failed to submit order:", error.message);
+                                    alert("Error submitting order: " + error.message);
                                 });
-
-
                         } else {
                             alert("Please ensure all fields are filled correctly.");
                         }
