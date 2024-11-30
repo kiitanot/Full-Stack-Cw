@@ -226,63 +226,54 @@
 
 
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify(orderData),
-                            })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        return response.json().then(errorData => {
-                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                                        });
-                                    }
-                                    return response.json();
-                                })
-                                .then(data => {
-                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
-
-                                    // Update the inventory
-                                    this.cart.forEach(productId => {
-                                        const product = this.getProductById(productId);
-                                        if (product) {
-                                            product.availableInventory -= 1; // Decrease inventory
-
-                                            console.log(`Updating product ID ${product._id} with inventory: ${product.availableInventory}`);
-
-                                            // Send a PUT request to update the backend
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
-                                                method: "PUT",
-                                                headers: {
-                                                    "Content-Type": "application/json",
-                                                },
-                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            }).then(response => {
-                                                if (!response.ok) {
-                                                    throw new Error(`Failed to update inventory for product ID ${product._id}`);
-                                                }
-                                                return response.json();
-                                            }).catch(error => {
-                                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
-                                            });
-                                        }
-                                    });
-
-                                    // Reset the form fields and cart
-                                    this.order.name = "";
-                                    this.order.phone = "";
-                                    this.cart = [];
-                                })
-                                .catch(error => {
-                                    console.error("Failed to submit order:", error.message);
-                                    alert("Error submitting order: " + error.message);
-                                });
-                        } else {
-                            alert("Please ensure all fields are filled correctly.");
-                        }
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
                     },
-
+                    body: JSON.stringify(orderData),
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+        
+                        // Update the inventory
+                        this.cart.forEach(productId => {
+                            const product = this.getProductById(productId);
+                            if (product) {
+                                product.availableInventory -= 1; // Decrease inventory
+                                // Send a PUT request to update the backend
+                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
+                                    method: "PUT",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                }).catch(error => {
+                                    console.error(`Failed to update inventory for product ID ${productId}:`, error);
+                                });
+                            }
+                        });
+        
+                        // Reset the form fields and cart
+                        this.order.name = "";
+                        this.order.phone = "";
+                        this.cart = [];
+                    })
+                    .catch(error => {
+                        console.error("Failed to submit order:", error.message);
+                        alert("Error submitting order: " + error.message);
+                    });
+            } else {
+                alert("Please ensure all fields are filled correctly.");
+            }
+        },
 
 
 
