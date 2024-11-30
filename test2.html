@@ -1,161 +1,383 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const { MongoClient, ObjectId } = require('mongodb');
-const cors = require('cors');
-const app = express();
+<!DOCTYPE html>
+<html lang="en">
 
 
-
-// MongoDB connection URI and database name
-const uri = 'mongodb+srv://ko460:nCEsXelqNFBfvPGQ@webstorecluster.wu59k.mongodb.net/?retryWrites=true&w=majority&appName=WebstoreCluster';
-const dbName = 'Webstore'; // Correct database name
-
-let productsCollection, ordersCollection;
-
-// Connect to MongoDB
-MongoClient.connect(uri)
-  .then((client) => {
-    console.log('Connected to MongoDB');
-    const db = client.db(dbName);  // Connecting to the 'WebstoreCluster' database
-    productsCollection = db.collection('products'); // "products" collection
-    ordersCollection = db.collection('orders'); // "orders" collection
-  })
-  .catch((err) => console.error('Failed to connect to MongoDB:', err));
-
-app.use(cors());
-app.use(express.json());
-// Logger middleware
-const logger = (req, res, next) => {
-  const now = new Date();
-  const logMessage = `[${now.toISOString()}] ${req.method} ${req.originalUrl} - IP: ${req.ip}`;
-  console.log(logMessage);
-  next();
-};
-
-// Apply logger middleware globally
-app.use(logger);
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
-
-app.use('/images', (req, res, next) => {
-  const imagePath = path.join(__dirname, '/images', req.url); // Ensure 'lesson-images' folder exists and images are inside it
-
-  // Check if the file exists
-  fs.access(imagePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      // If the file does not exist, return an error message
-      return res.status(404).json({ error: 'Image not found' });
-    }
-    // If the file exists, serve the file
-    res.sendFile(imagePath);
-  });
-});
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/027c90a952.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- <script src="products.js"></script> -->
+    <title>Lessons</title>
+</head>
 
 
-// GET route for products
-app.get('/products', async (req, res) => {
-  if (!productsCollection) {
-    return res.status(500).json({ error: 'Database not initialized' });
-  }
-  try {
-    const products = await productsCollection.find().toArray();
-    if (products.length === 0) {
-      return res.status(404).json({ error: 'No products found' });
-    }
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch products' });
-  }
-});
+<body id="app">
+    <div>
 
 
-// POST route for orders
-app.post('/orders', async (req, res) => {
-  const { productIds, customerName, phoneNumber } = req.body;
-
-  // Validate input
-  if (!productIds || !Array.isArray(productIds) || productIds.length === 0 || !customerName || !phoneNumber) {
-    return res.status(400).json({ error: 'Missing required fields: customerName, or phoneNumber' });
-  }
-
-  try {
-    const order = { productIds, customerName, phoneNumber, date: new Date() };
-    const orderResult = await ordersCollection.insertOne(order);
-
-    // Respond with success and the order ID
-    res.status(201).json({ message: 'Order created successfully', orderId: orderResult.insertedId });
-  } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ error: 'An error occurred while processing the order' });
-  }
-});
-
-
-
-// PUT route to update any attribute of a product
-app.put('/products/:id', async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body; // Accept entire update payload
-
-  if (!ObjectId.isValid(id)) {
-    return res.status(400).json({ error: 'Invalid product ID' });
-  }
-  if (typeof updateData !== 'object' || Object.keys(updateData).length === 0) {
-    return res.status(400).json({ error: 'Invalid update payload' });
-  }
-
-  try {
-    const result = await productsCollection.updateOne(
-      { _id: new ObjectId(id) },  // Ensure we're looking for the right product
-      { $set: updateData } // Dynamically apply updates
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-
-    res.json({ message: 'Product updated successfully', updatedFields: updateData });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update product' });
-  }
-});
+        <header>
+            <nav>
+                <div class="nav">
+                    <ul>
+                        <h2 v-text="sitename"></h2>
+                    </ul>
+                    <button class="navbutton" v-on:click="showCheckout" :disabled="isCartEmpty"> {{ itemsInTheCart }}
+                        <span class="fa-solid fa-cart-shopping fa-2xs"> </span> Checkout
+                    </button>
+                </div>
+            </nav>
+        </header>
 
 
 
 
-// Search
 
-app.get('/search', async (req, res) => {
-  const searchTerm = req.query.searchTerm?.toLowerCase() || ''; // Capture search term from query parameters and convert to lowercase
-
-  try {
-    // Filter products based on search term matching the specified fields
-    const results = await productsCollection.find({
-      $or: [
-        { title: { $regex: searchTerm, $options: 'i' } },
-        { location: { $regex: searchTerm, $options: 'i' } },
-        { price: { $eq: parseFloat(searchTerm) } }
-      ]
-    }).toArray();
-
-    // Return the filtered products as JSON response
-    res.json(results);
-  } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: 'Error searching for products' });
-  }
-});
+        <main>
+            <div class="lb">
+                <div v-if="showProduct">
 
 
 
-// Start the server
+                    <div class="sortd">
 
-const port = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-  res.send('Welcome!')
-})
+                        <div class="searchw">
+                            <input type="text" class="search" id="class" placeholder="Search Lessons...."
+                                v-model="searchProducts " @input="debounceSearch">
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-});
+                        </div>
+
+                        <select v-model="selectedSort" class="sort" id="sort">
+                            <option value="titleAsc">Title (A-Z)</option>
+                            <option value="titleDesc">Title (Z-A)</option>
+                            <option value="priceAsc">Price (Lowest-Highest)</option>
+                            <option value="priceDesc">Price (Highest-Lowest)</option>
+                            <option value="availabilityAsc">Availability (Lowest-Highest)</option>
+                            <option value="availabilityDesc">Availability (Highest-Lowest)</option>
+                            <option value="locationAsc">Location (Closest-Farthest)</option>
+                            <option value="locationDesc">Location (Farthest-Closest)</option>
+                        </select>
+                    </div>
+
+                    <div class="lessons">
+                        <div v-for="product in sortedProducts" :key="product.id">
+                            <figure>
+                                <img v-bind:src="product.image" alt="image">
+                            </figure>
+
+                            <h1 v-text="product.title"></h1> <br>
+                            <p v-text="product.description"></p> <br>
+                            <p>Price: {{product.price}}</p> <br>
+                            <p>Location: {{product.location}}</p> <br>
+                            <p>Spaces left: {{itemsLeft(product)}}</p> <br>
+
+                            <div>
+                                <span v-for="n in product.rating">★</span>
+                                <span v-for="n in 5 - product.rating">☆</span>
+                            </div> <br>
+
+                            <button class="hb" v-if="canAddToTheCart(product)"
+                                v-on:click="addItemToTheCart(product)">Add To The
+                                Cart</button>
+                            <button class="hbd" v-else disabled>Add To The Cart</button>
+
+                            <span v-if="itemsLeft(product) === 0"> All Out!</span>
+                            <span v-else-if="itemsLeft(product) < 5"> Only {{itemsLeft(product)}} left!</span>
+                            <span v-else> Buy now!</span>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="Checkout" class="checkout" v-else>
+
+                    <h1>Welcome to the Checkout page</h1>
+
+                    <div v-for="product in cart" :key="product" class="checkoutproducts">
+                        <div class="checkoutimg"> <img v-bind:src="getProductById(product).image" alt="image"></img>
+                        </div>
+                        <p>{{ getProductById(product).title }}</p> <br>
+                        <p>Price: {{ getProductById(product).price }}</p> <br>
+                        <button class="checkoutbutton" v-on:click="removeItemFromCart(product)"> Remove </button>
+                    </div>
+
+                    <div class="form">
+                        <form @submit.prevent="submitCheckOutForm">
+                            <p class="f-text">
+                                <strong> Name:</strong>
+                                <input type="text" v-model="order.name" class="form-input" pattern="^[A-Za-z]+$"
+                                    title="Name must contain only letters A-Za-z." required>
+                            </p> <br>
+                            <p class="f-text">
+                                <strong> Phone number: </strong>
+                                <input type="text" v-model="order.phone" class="form-input"
+                                    title="Phone number should be numeric (including leading zeros).">
+                            </p> <br>
+
+                            <h2 class="f-text"> Order Information </h2> <br>
+
+                            <p class="f-text"> <strong> Name: </strong> {{order.name}} </p> <br>
+                            <p class="f-text">
+                                <strong> Phone: </strong> {{order.phone}}
+                            </p> <br>
+
+                            <button type="submit" :disabled="!validateForm()" :class="{ active: validateForm() }"
+                                class="hbc">
+                                Place Order
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+        <script>
+            Vue.createApp({
+                // el: "#app",
+                data() {
+                    return {
+                        sitename: "Online lessons",
+                        showProduct: true,
+                        products: [], // Initially empty; fetched from the backend
+                        cart: [],
+                        selectedSort: "titleAsc",
+                        searchProducts: "",
+                        debounceTimer: null,
+                        order: {
+                            name: "",
+                            phone: "",
+                        },
+                    }
+                },
+        
+                methods: {
+                    // Debounced search to reduce the number of backend requests
+                    debounceSearch() {
+                        clearTimeout(this.debounceTimer);
+                        this.debounceTimer = setTimeout(() => {
+                            this.searchProductsFromBackend(); // Call backend search
+                        }, 300); // Adjust delay as needed (300ms is standard)
+                    },
+        
+                    // Fetch products based on search input from the backend
+                    searchProductsFromBackend() {
+                        const searchTerm = this.searchProducts.trim();
+        
+                        if (!searchTerm) {
+                            this.fetchProducts(); // Reload all products if search is empty
+                            return;
+                        }
+        
+                        fetch(`https://full-stack-back-end-ws6p.onrender.com/search?searchTerm=${encodeURIComponent(searchTerm)}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (Array.isArray(data) && data.length > 0) {
+                                    this.products = data; // Update displayed products
+                                } else {
+                                    console.warn("No products found for the search term:", searchTerm);
+                                    this.products = []; // Clear displayed products if no match
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Search error:", error);
+                                alert("Error searching for products. Please try again later.");
+                            });
+                    },
+        
+                    // Fetch products from the backend
+                    fetchProducts() {
+                        fetch('https://full-stack-back-end-ws6p.onrender.com/products')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                this.products = data;
+                            })
+                            .catch(error => {
+                                console.error("Failed to fetch products:", error);
+                                alert("Error fetching products. Please try again later.");
+                            });
+                    },
+        
+                    // Submit checkout order to the backend
+                    submitCheckOutForm() {
+            if (this.validateForm()) {
+                // Prepare the order data
+                const orderData = {
+                    customerName: this.order.name,
+                    phoneNumber: this.order.phone,
+                    productIds: this.cart, // Assuming 'cart' contains product IDs
+                };
+
+
+
+
+                // Fetch call to submit the order
+                fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(orderData),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+        
+                    // Update the inventory
+                    this.cart.forEach(productId => {
+                        const product = this.getProductById(productId);
+                        if (product) {
+                            product.availableInventory -= 1; // Decrease inventory
+        
+                            // Send a PUT request to update the backend
+                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                method: "PUT",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                            }).catch(error => {
+                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                            });
+                        }  
+                    });
+        
+                    // Reset the form fields and cart
+                    this.order.name = "";
+                    this.order.phone = "";
+                    this.cart = [];
+                })
+                .catch(error => {
+                    console.error("Failed to submit order:", error.message);
+                    alert("Error submitting order: " + error.message);
+                });
+            } else {
+                alert("Please ensure all fields are filled correctly.");
+            }
+        },
+        
+                    // Other methods remain unchanged
+                    showCheckout() {
+                        if (!this.isCartEmpty) {
+                            this.showProduct = !this.showProduct;
+                        } else {
+                            alert("Your cart is empty. Please add products to proceed.");
+                        }
+                    },
+        
+                    addItemToTheCart(product) {
+                        this.cart.push(product.id);
+                    },
+        
+                    removeItemFromCart(id) {
+                        const index = this.cart.indexOf(id);
+                        if (index > -1) {
+                            this.cart.splice(index, 1);
+                        }
+        
+                        // If the cart becomes empty, show the product page
+                        if (this.cart.length === 0) {
+                            this.showProduct = true;
+                        }
+                    },
+        
+                    validateForm() {
+                        const phoneRegex = /^[0-9]{11}$/;
+                        const nameRegex = /^[A-Za-z]+$/;
+                        return nameRegex.test(this.order.name) && phoneRegex.test(this.order.phone);
+                    },
+        
+                    canAddToTheCart(product) {
+                        return product.availableInventory > this.cartCount(product.id);
+                    },
+        
+                    cartCount(id) {
+                        return this.cart.filter(cartId => cartId === id).length;
+                    },
+        
+                    getProductById(id) {
+                        return this.products.find(product => product.id === id);
+                    },
+        
+                    itemsLeft(product) {
+                        return product.availableInventory - this.cartCount(product.id);
+                    },
+                },
+        
+                computed: {
+                    itemsInTheCart() {
+                        return this.cart.length || "";
+                    },
+        
+                    isCartEmpty() {
+                        return this.cart.length === 0;
+                    },
+        
+                    sortedProducts() {
+                        let sorted = [...this.products];
+                        switch (this.selectedSort) {
+                            case "titleAsc":
+                                return sorted.sort((a, b) => a.title.localeCompare(b.title));
+                            case "titleDesc":
+                                return sorted.sort((a, b) => b.title.localeCompare(a.title));
+                            case "priceAsc":
+                                return sorted.sort((a, b) => a.price - b.price);
+                            case "priceDesc":
+                                return sorted.sort((a, b) => b.price - a.price);
+                            case "availabilityAsc":
+                                return sorted.sort((a, b) => a.availableInventory - b.availableInventory);
+                            case "availabilityDesc":
+                                return sorted.sort((a, b) => b.availableInventory - a.availableInventory);
+                            case "locationAsc":
+                                return sorted.sort((a, b) => a.location.localeCompare(b.location));
+                            case "locationDesc":
+                                return sorted.sort((a, b) => b.location.localeCompare(a.location));
+                            default:
+                                return this.products;
+                        }
+                    },
+                },
+        
+                watch: {
+                    cart(newCart) {
+                        //shows product page when cart is empty
+                        if (newCart.length === 0) {
+                            this.showProduct = true;
+                        }
+                    },
+                },
+        
+                mounted() {
+                    this.fetchProducts(); // Automatically fetch products on load
+                },
+            }).mount('#app');
+        </script>
+        
+
+</body>
+
+</html>
