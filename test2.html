@@ -225,10 +225,7 @@
                                 productIds: this.cart, // Assuming 'cart' contains product IDs
                             };
 
-
-
-
-                            // Fetch call to submit the order
+                            // Send request to place order
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -247,19 +244,21 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory
-                                    this.cart.forEach(productId => {
-                                        const product = this.getProductById(productId);
-                                        if (product) {
-                                            product.availableInventory -= 1; // Decrease inventory
+                                    // Update the inventory: Track the quantity of each product ordered
+                                    const cartWithQuantity = this.getCartWithQuantity();
 
-                                            // Send a PUT request to update the backend
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                    cartWithQuantity.forEach(item => {
+                                        const product = this.getProductById(item.id);
+                                        if (product) {
+                                            const updatedInventory = product.availableInventory - item.quantity;
+
+                                            // Send PUT request to update the product's availableInventory
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
                                                 },
-                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                                body: JSON.stringify({ availableInventory: updatedInventory }),
                                             }).catch(error => {
                                                 console.error(`Failed to update inventory for product ID ${product._id}:`, error);
                                             });
@@ -280,6 +279,22 @@
                         }
                     },
 
+                    // Helper method to track quantity of each product in the cart
+                    getCartWithQuantity() {
+                        const cartWithQuantity = [];
+                        this.cart.forEach(productId => {
+                            const existingItem = cartWithQuantity.find(item => item.id === productId);
+                            if (existingItem) {
+                                existingItem.quantity += 1;
+                            } else {
+                                cartWithQuantity.push({ id: productId, quantity: 1 });
+                            }
+                        });
+                        return cartWithQuantity;
+                    },
+
+
+
                     getProductById(id) {
                         return this.products.find(product => product.id === id);
                     },
@@ -288,7 +303,7 @@
                         return product.availableInventory - this.cartCount(product.id);
                     },
 
-                 
+
                     showCheckout() {
                         if (!this.isCartEmpty) {
                             this.showProduct = !this.showProduct;
@@ -327,7 +342,7 @@
                         return this.cart.filter(cartId => cartId === id).length;
                     },
 
-                   
+
                 },
 
                 computed: {
