@@ -231,29 +231,38 @@
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify(orderData),
                             })
-                                .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)))
-                                .then(data => {
-                                    alert(`Order submitted! Order ID: ${data.orderId}`);
+                                .then(response => {
+                                    if (!response.ok) {
+                                        return response.json().then(err => Promise.reject(err));
+                                    }
+                                    return response.json();
+                                })
+                                .then(orderData => {
+                                    alert(`Order submitted! Order ID: ${orderData.orderId}`);
 
-                                    // Update inventory for all products in the cart
-                                    const updates = this.cart.map(productId => {
+                                    // Update inventory for all items in the cart
+                                    const updatePromises = this.cart.map(productId => {
                                         return fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
                                             method: "PUT",
                                             headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ quantityOrdered: 1 }), // Assume 1 item per product for simplicity
+                                            body: JSON.stringify({ quantityOrdered: 1 }), // Adjust for actual logic
                                         })
-                                            .then(response => response.ok ? response.json() : response.json().then(err => Promise.reject(err)));
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    return response.json().then(err => Promise.reject(err));
+                                                }
+                                                return response.json();
+                                            });
                                     });
 
-                                    // Wait for all updates to complete
-                                    return Promise.all(updates);
+                                    return Promise.all(updatePromises);
                                 })
                                 .then(() => {
-                                    // Reset form and cart
+                                    // Clear the cart and reset the form after successful updates
+                                    this.cart = [];
                                     this.order.name = "";
                                     this.order.phone = "";
-                                    this.cart = [];
-                                    alert("Order and inventory successfully processed!");
+                                    alert("Order completed, and inventory updated successfully!");
                                 })
                                 .catch(error => {
                                     console.error("Error:", error.message);
