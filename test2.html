@@ -231,7 +231,11 @@
                                 headers: {
                                     "Content-Type": "application/json",
                                 },
-                                body: JSON.stringify(orderData),
+                                body: JSON.stringify({
+                                    productIds: this.cart, // Send product IDs directly
+                                    customerName: this.order.name,
+                                    phoneNumber: this.order.phone,
+                                }),
                             })
                                 .then(response => {
                                     if (!response.ok) {
@@ -243,6 +247,7 @@
                                 })
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+
 
                                     // Update the inventory
                                     this.cart.forEach(productId => {
