@@ -111,12 +111,12 @@
                         <form @submit.prevent="submitCheckOutForm">
                             <p class="f-text">
                                 <strong> Name:</strong>
-                                <input type="text" v-model="order.name" class="form-input" pattern="^[A-Za-z]+$"
+                                <input type="text" v-model="order.name" id="form-input" class="form-input" pattern="^[A-Za-z]+$"
                                     title="Name must contain only letters A-Za-z." required>
                             </p> <br>
                             <p class="f-text">
                                 <strong> Phone number: </strong>
-                                <input type="text" v-model="order.phone" class="form-input"
+                                <input type="text" v-model="order.phone" id="form-input" class="form-input"
                                     title="Phone number should be numeric (including leading zeros).">
                             </p> <br>
 
