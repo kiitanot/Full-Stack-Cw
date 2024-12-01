@@ -248,14 +248,14 @@
                                             }
 
                                                 // Send a PUT request to update the backend
-                                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product.id}`, {  // Use '_id' here
                                                     method: "PUT",
                                                     headers: {
                                                         "Content-Type": "application/json",
                                                     },
                                                     body: JSON.stringify({ availableInventory: product.availableInventory }),
                                                 }).catch(error => {
-                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                                    console.error(`Failed to update inventory for product ID ${product.id}:`, error);
                                                 });
                                             }
                                         });
