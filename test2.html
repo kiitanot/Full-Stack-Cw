@@ -219,6 +219,8 @@
                                 productIds: this.cart,
                             };
 
+
+                            // post orders 
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -237,31 +239,30 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory
-                                    this.cart.forEach(productId => {
+                                    // Update the inventory for all products in the cart
+                                    const updatePromises = this.cart.map(productId => {
                                         const product = this.getProductById(productId);
                                         if (product) {
-                                            product.availableInventory -= 1; // Decrease inventory
+                                            const updatedInventory = product.availableInventory - 1; // Decrease inventory
 
-                                            // Send the PUT request
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
+                                            // PUT request to update inventory
+                                            return fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
                                                 },
-                                                body: JSON.stringify({ availableInventory: availableInventory }),
+                                                body: JSON.stringify({ availableInventory: updatedInventory }),
                                             })
                                                 .then(response => {
-                                                    // Check if the response is OK
                                                     if (!response.ok) {
                                                         throw new Error(`HTTP error! Status: ${response.status}`);
                                                     }
-                                                    return response.json(); // Parse the JSON response
+                                                    return response.json();
                                                 })
                                                 .then(updatedProduct => {
                                                     console.log(`Successfully updated product ID ${productId}:`, updatedProduct);
 
-                                                    // Update the frontend state after successful backend update
+                                                    // Update the frontend state
                                                     setProducts(prevProducts =>
                                                         prevProducts.map(product =>
                                                             product.id === productId
@@ -269,22 +270,25 @@
                                                                 : product
                                                         )
                                                     );
-                                                })
-                                                .catch(error => {
-                                                    console.error(`Failed to update inventory for product ID ${productId}:`, error);
                                                 });
                                         }
                                     });
 
+                                    // Wait for all inventory updates to complete
+                                    return Promise.all(updatePromises);
+                                })
+                                .then(() => {
                                     // Reset the form fields and cart
                                     this.order.name = "";
                                     this.order.phone = "";
                                     this.cart = [];
+                                    alert("Order and inventory updates completed successfully!");
                                 })
                                 .catch(error => {
-                                    console.error("Failed to submit order:", error.message);
-                                    alert("Error submitting order: " + error.message);
+                                    console.error("Failed to submit order or update inventory:", error.message);
+                                    alert("Error: " + error.message);
                                 });
+
                         } else {
                             alert("Please ensure all fields are filled correctly.");
                         }
