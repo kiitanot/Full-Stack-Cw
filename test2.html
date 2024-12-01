@@ -242,22 +242,35 @@
                                         const product = this.getProductById(productId);
                                         if (product) {
                                             product.availableInventory -= 1; // Decrease inventory
-                                            // Send a PUT request to update the backend
+
+                                            // Send the PUT request
                                             fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`, {
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
                                                 },
-                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            }).then(response => {
-                                                if (!response.ok) {
-                                                    throw new Error(`HTTP error! Status: ${response.status}`);
-                                                }
-                                                return response.json();
+                                                body: JSON.stringify({ availableInventory: availableInventory }),
                                             })
-                                                .then(data => {
-                                                    console.log(`Successfully updated product ID ${productId}:`, data);
-                                                }).catch(error => {
+                                                .then(response => {
+                                                    // Check if the response is OK
+                                                    if (!response.ok) {
+                                                        throw new Error(`HTTP error! Status: ${response.status}`);
+                                                    }
+                                                    return response.json(); // Parse the JSON response
+                                                })
+                                                .then(updatedProduct => {
+                                                    console.log(`Successfully updated product ID ${productId}:`, updatedProduct);
+
+                                                    // Update the frontend state after successful backend update
+                                                    setProducts(prevProducts =>
+                                                        prevProducts.map(product =>
+                                                            product.id === productId
+                                                                ? { ...product, availableInventory: updatedProduct.availableInventory }
+                                                                : product
+                                                        )
+                                                    );
+                                                })
+                                                .catch(error => {
                                                     console.error(`Failed to update inventory for product ID ${productId}:`, error);
                                                 });
                                         }
