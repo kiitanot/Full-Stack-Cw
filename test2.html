@@ -219,6 +219,8 @@
                                 productIds: this.cart,
                             };
 
+
+                            // post orders 
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -246,7 +248,7 @@
                                             }
 
                                             // Send a PUT request to update the backend
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
@@ -272,6 +274,7 @@
                         }
                     },
 
+                    
                     showCheckout() {
                         if (!this.isCartEmpty) {
                             this.showProduct = !this.showProduct;
@@ -317,7 +320,6 @@
                         return product.availableInventory - this.cartCount(product.id);
                     },
                 },
-
 
                 computed: {
                     itemsInTheCart() {
