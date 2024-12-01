@@ -213,14 +213,19 @@
 
                     submitCheckOutForm() {
                         if (this.validateForm()) {
+                            // Validate stock and system before proceeding with the order submission
+                            if (!this.validateSystem()) {
+                                alert("System validation failed. Please try again later.");
+                                return;
+                            }
+
                             const orderData = {
                                 customerName: this.order.name,
                                 phoneNumber: this.order.phone,
                                 productIds: this.cart,
                             };
 
-
-                            // post orders 
+                            // Post orders
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -239,24 +244,27 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory
+                                    // Update the inventory with stock validation
                                     this.cart.forEach(productId => {
                                         const product = this.getProductById(productId);
                                         if (product) {
+                                            // Stock validation
                                             if (product.availableInventory > 0) {
                                                 product.availableInventory -= 1;
-                                            }
 
-                                            // Send a PUT request to update the backend
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
-                                                method: "PUT",
-                                                headers: {
-                                                    "Content-Type": "application/json",
-                                                },
-                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            }).catch(error => {
-                                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
-                                            });
+                                                // Send a PUT request to update the backend
+                                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
+                                                    method: "PUT",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                    },
+                                                    body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                                }).catch(error => {
+                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                                });
+                                            } else {
+                                                console.log(`Product ${product.id} is out of stock and cannot be purchased.`);
+                                            }
                                         }
                                     });
 
@@ -274,7 +282,8 @@
                         }
                     },
 
-                    
+
+
                     showCheckout() {
                         if (!this.isCartEmpty) {
                             this.showProduct = !this.showProduct;
