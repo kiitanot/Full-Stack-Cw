@@ -216,24 +216,14 @@
 
                     submitCheckOutForm() {
                         if (this.validateForm()) {
-                            // Check stock availability before proceeding
-                            const insufficientStock = this.cart.some(productId => {
-                                const product = this.getProductById(productId);
-                                return product && product.availableInventory <= 0;
-                            });
-
-                            if (insufficientStock) {
-                                alert("One or more products in your cart are out of stock. Please remove or replace them.");
-                                return;
-                            }
-
                             const orderData = {
                                 customerName: this.order.name,
                                 phoneNumber: this.order.phone,
                                 productIds: this.cart,
                             };
 
-                            // Post orders
+
+                            // post orders 
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -252,7 +242,7 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory after successful order submission
+                                    // Update the inventory
                                     this.cart.forEach(productId => {
                                         const product = this.getProductById(productId);
                                         if (product) {
@@ -260,8 +250,8 @@
                                                 product.availableInventory -= 1;
                                             }
 
-                                            // Send a PUT request to update the backend inventory
-                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
+                                            // Send a PUT request to update the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
@@ -339,6 +329,8 @@
                         return product.availableInventory - this.cartCount(product.id);
                     },
                 },
+
+
 
                 computed: {
                     itemsInTheCart() {
