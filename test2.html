@@ -247,7 +247,7 @@
                                         const product = this.getProductById(productId);
                                         if (product) {
                                             if (product.availableInventory > 0)  {
-                                                product.availableInventory = availableInventory;
+                                                product.availableInventory = -1;
                                             }
 
                                             // Send a PUT request to update the backend
