@@ -246,9 +246,7 @@
                                     this.cart.forEach(productId => {
                                         const product = this.getProductById(productId);
                                         if (product) {
-                                            if (product.availableInventory > 0) {
-                                                product.availableInventory -= 1;
-                                            }
+                                            if (product.availableInventory > 0) 
 
                                             // Send a PUT request to update the backend
                                             fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
