@@ -216,25 +216,15 @@
 
                     submitCheckOutForm() {
                         if (this.validateForm()) {
-                            // Step 1: Validate system before proceeding with the order submission
-                            if (!this.validateSystem()) {
-                                alert("System validation failed. Please try again later.");
-                                return;
-                            }
-
-                            // Step 2: Validate stock for all items in the cart
-                            let stockValidationPassed = true;
-                            this.cart.forEach(productId => {
+                            // Check stock availability before proceeding
+                            const insufficientStock = this.cart.some(productId => {
                                 const product = this.getProductById(productId);
-                                if (product && product.availableInventory <= 0) {
-                                    stockValidationPassed = false;
-                                    console.log(`Product ${product.id} is out of stock.`);
-                                }
+                                return product && product.availableInventory <= 0;
                             });
 
-                            if (!stockValidationPassed) {
-                                alert("Some products are out of stock. Please remove them from your cart.");
-                                return; // Stop the order submission process
+                            if (insufficientStock) {
+                                alert("One or more products in your cart are out of stock. Please remove or replace them.");
+                                return;
                             }
 
                             const orderData = {
@@ -243,7 +233,7 @@
                                 productIds: this.cart,
                             };
 
-                            // Step 3: Submit the order to the backend
+                            // Post orders
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -262,32 +252,28 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Step 4: Update the inventory for each product in the cart
+                                    // Update the inventory after successful order submission
                                     this.cart.forEach(productId => {
                                         const product = this.getProductById(productId);
-                                        if (product && product.availableInventory > 0) {
-                                            product.availableInventory -= 1; // Decrease inventory
+                                        if (product) {
+                                            if (product.availableInventory > 0) {
+                                                product.availableInventory -= 1;
+                                            }
 
-                                            // Send PUT request to update inventory in the backend
+                                            // Send a PUT request to update the backend inventory
                                             fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
                                                 method: "PUT",
                                                 headers: {
                                                     "Content-Type": "application/json",
                                                 },
                                                 body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            })
-                                                .then(updateResponse => {
-                                                    if (!updateResponse.ok) {
-                                                        console.error(`Failed to update inventory for product ID ${product._id}`);
-                                                    }
-                                                })
-                                                .catch(error => {
-                                                    console.error(`Failed to update inventory for product ID ${product._id}:`, error);
-                                                });
+                                            }).catch(error => {
+                                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                            });
                                         }
                                     });
 
-                                    // Step 5: Reset form and cart after successful order submission
+                                    // Reset the form fields and cart
                                     this.order.name = "";
                                     this.order.phone = "";
                                     this.cart = [];
@@ -304,7 +290,8 @@
 
 
 
-                    
+
+
 
 
                     showCheckout() {
