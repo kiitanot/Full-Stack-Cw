@@ -215,74 +215,67 @@
 
 
                     submitCheckOutForm() {
-    if (this.validateForm()) {
-        const orderData = {
-            customerName: this.order.name,
-            phoneNumber: this.order.phone,
-            productIds: this.cart,
-        };
+                        if (this.validateForm()) {
+                            const orderData = {
+                                customerName: this.order.name,
+                                phoneNumber: this.order.phone,
+                                productIds: this.cart,
+                            };
 
-        // Post orders
-        fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(orderData),
-        })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(async data => {
-                alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                // Update the inventory
-                for (const productId of this.cart) {
-                    try {
-                        // Fetch the current product data from the backend
-                        const productResponse = await fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${productId}`);
-                        if (!productResponse.ok) {
-                            throw new Error(`Failed to fetch product ID ${productId}: ${productResponse.statusText}`);
-                        }
-
-                        const product = await productResponse.json();
-
-                        if (product.availableInventory > 0) {
-                            const updatedInventory = product.availableInventory - 1;
-
-                            // Send a PUT request to update the backend
-                            await fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
-                                method: "PUT",
+                            // post orders 
+                            fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
+                                method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
                                 },
-                                body: JSON.stringify({ availableInventory: updatedInventory }),
-                            });
+                                body: JSON.stringify(orderData),
+                            })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        return response.json().then(errorData => {
+                                            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                                        });
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
+
+                                    // Update the inventory
+                                    this.cart.forEach(productId => {
+                                        const product = this.getProductById(productId);
+                                        if (product) {
+                                            if (product.availableInventory > 0) {
+                                                product.availableInventory -= 1;
+                                            }
+
+                                            // Send a PUT request to update the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {  // Use '_id' here
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                },
+                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                            }).catch(error => {
+                                                console.error(`Failed to update inventory for product ID ${product._id}:`, error);
+                                            });
+                                        }
+                                    });
+
+                                    // Reset the form fields and cart
+                                    this.order.name = "";
+                                    this.order.phone = "";
+                                    this.cart = [];
+                                })
+                                .catch(error => {
+                                    console.error("Failed to submit order:", error.message);
+                                    alert("Error submitting order: " + error.message);
+                                });
+                        } else {
+                            alert("Please ensure all fields are filled correctly.");
                         }
-                    } catch (error) {
-                        console.error(`Failed to update inventory for product ID ${productId}:`, error);
-                    }
-                }
-
-                // Reset the form fields and cart
-                this.order.name = "";
-                this.order.phone = "";
-                this.cart = [];
-            })
-            .catch(error => {
-                console.error("Failed to submit order:", error.message);
-                alert("Error submitting order: " + error.message);
-            });
-    } else {
-        alert("Please ensure all fields are filled correctly.");
-    }
-},
-
+                    },
 
 
 
