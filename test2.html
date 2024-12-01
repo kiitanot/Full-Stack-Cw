@@ -211,12 +211,30 @@
                             });
                     },
 
+
+
+
                     submitCheckOutForm() {
                         if (this.validateForm()) {
-                            // Validate stock and system before proceeding with the order submission
+                            // Step 1: Validate system before proceeding with the order submission
                             if (!this.validateSystem()) {
                                 alert("System validation failed. Please try again later.");
                                 return;
+                            }
+
+                            // Step 2: Validate stock for all items in the cart
+                            let stockValidationPassed = true;
+                            this.cart.forEach(productId => {
+                                const product = this.getProductById(productId);
+                                if (product && product.availableInventory <= 0) {
+                                    stockValidationPassed = false;
+                                    console.log(`Product ${product.id} is out of stock.`);
+                                }
+                            });
+
+                            if (!stockValidationPassed) {
+                                alert("Some products are out of stock. Please remove them from your cart.");
+                                return; // Stop the order submission process
                             }
 
                             const orderData = {
@@ -225,7 +243,7 @@
                                 productIds: this.cart,
                             };
 
-                            // Post orders
+                            // Step 3: Submit the order to the backend
                             fetch('https://full-stack-back-end-ws6p.onrender.com/orders', {
                                 method: "POST",
                                 headers: {
@@ -244,31 +262,32 @@
                                 .then(data => {
                                     alert(`Congratulations, order submitted! Order ID: ${data.orderId}`);
 
-                                    // Update the inventory with stock validation
+                                    // Step 4: Update the inventory for each product in the cart
                                     this.cart.forEach(productId => {
                                         const product = this.getProductById(productId);
-                                        if (product) {
-                                            // Stock validation
-                                            if (product.availableInventory > 0) {
-                                                product.availableInventory -= 1;
+                                        if (product && product.availableInventory > 0) {
+                                            product.availableInventory -= 1; // Decrease inventory
 
-                                                // Send a PUT request to update the backend
-                                                fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
-                                                    method: "PUT",
-                                                    headers: {
-                                                        "Content-Type": "application/json",
-                                                    },
-                                                    body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                                }).catch(error => {
+                                            // Send PUT request to update inventory in the backend
+                                            fetch(`https://full-stack-back-end-ws6p.onrender.com/products/${product._id}`, {
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                },
+                                                body: JSON.stringify({ availableInventory: product.availableInventory }),
+                                            })
+                                                .then(updateResponse => {
+                                                    if (!updateResponse.ok) {
+                                                        console.error(`Failed to update inventory for product ID ${product._id}`);
+                                                    }
+                                                })
+                                                .catch(error => {
                                                     console.error(`Failed to update inventory for product ID ${product._id}:`, error);
                                                 });
-                                            } else {
-                                                console.log(`Product ${product.id} is out of stock and cannot be purchased.`);
-                                            }
                                         }
                                     });
 
-                                    // Reset the form fields and cart
+                                    // Step 5: Reset form and cart after successful order submission
                                     this.order.name = "";
                                     this.order.phone = "";
                                     this.cart = [];
@@ -282,6 +301,10 @@
                         }
                     },
 
+
+
+
+                    
 
 
                     showCheckout() {
