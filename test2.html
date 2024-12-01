@@ -249,9 +249,17 @@
                                                     "Content-Type": "application/json",
                                                 },
                                                 body: JSON.stringify({ availableInventory: product.availableInventory }),
-                                            }).catch(error => {
-                                                console.error(`Failed to update inventory for product ID ${productId}:`, error);
-                                            });
+                                            }).then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error(`HTTP error! Status: ${response.status}`);
+                                                }
+                                                return response.json();
+                                            })
+                                                .then(data => {
+                                                    console.log(`Successfully updated product ID ${productId}:`, data);
+                                                }).catch(error => {
+                                                    console.error(`Failed to update inventory for product ID ${productId}:`, error);
+                                                });
                                         }
                                     });
 
